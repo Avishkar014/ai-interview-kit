@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import Kit from "../models/kit.model.js";
 import Practice from "../models/practice.model.js";
 import generateKit from "../services/generation/generateKit.js";
+import { generateQuestionsForCategory } from "../services/generation/questionGenerator.js";
 import aggregateWeakSpots from "../services/practice/weakSpots.js";
 
 const createKitSchema = z.object({
@@ -79,6 +80,128 @@ export async function updateKit(request, response) {
   const kit = await Kit.findOneAndUpdate(ownerQuery(request, request.params.id), { $set: { questions: questions.data } }, { new: true }).select("-__v");
   if (!kit) return response.status(404).json({ success: false, message: "Kit not found" });
   return response.json({ success: true, kit });
+}
+export async function regenerateQuestions(request, response) {
+  const categorySchema = z.enum([
+    "technical",
+    "behavioural",
+    "system-design",
+    "company-fit",
+  ]);
+
+  const parsed = categorySchema.safeParse(request.body?.category);
+
+  if (!parsed.success) {
+    return response.status(400).json({
+      success: false,
+      message: "Invalid question category",
+    });
+  }
+
+  const category = parsed.data;
+
+  const kit = await Kit.findOne(
+    ownerQuery(request, request.params.id),
+  );
+
+  if (!kit) {
+    return response.status(404).json({
+      success: false,
+      message: "Kit not found",
+    });
+  }
+
+  if (kit.status !== "completed") {
+    return response.status(409).json({
+      success: false,
+      message: "Only completed kits can regenerate questions",
+    });
+  }
+
+  const existingQuestions = Array.isArray(kit.questions)
+    ? kit.questions
+    : [];
+
+  const replaceableQuestions = existingQuestions.filter(
+    (question) =>
+      question.category === category &&
+      question.source !== "manual" &&
+      question.edited !== true &&
+      question.pinned !== true,
+  );
+
+  if (replaceableQuestions.length === 0) {
+    return response.json({
+      success: true,
+      message: "No replaceable questions found in this category",
+      kit,
+    });
+  }
+
+  const requirements = kit.role?.requirements || [];
+
+  const generatedQuestions = await generateQuestionsForCategory(
+    category,
+    requirements,
+    {
+      questionCount: replaceableQuestions.length,
+    },
+  );
+
+  const replacementCount = Math.min(
+    generatedQuestions.length,
+    replaceableQuestions.length,
+  );
+
+  const replacementById = new Map();
+
+  for (let index = 0; index < replacementCount; index += 1) {
+    const original = replaceableQuestions[index];
+    const generated = generatedQuestions[index];
+
+    replacementById.set(original.id, {
+      ...generated,
+
+      // Preserve the existing ID so schedule references remain valid.
+      id: original.id,
+
+      source: "generated",
+      edited: false,
+      pinned: false,
+    });
+  }
+
+  const questions = existingQuestions.map((question) => {
+    const replacement = replacementById.get(question.id);
+
+    return replacement || question;
+  });
+
+  const updatedKit = await Kit.findOneAndUpdate(
+    ownerQuery(request, request.params.id),
+    {
+      $set: {
+        questions,
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
+  ).select("-__v");
+
+  if (!updatedKit) {
+    return response.status(404).json({
+      success: false,
+      message: "Kit not found",
+    });
+  }
+
+  return response.json({
+    success: true,
+    message: `${category} questions regenerated`,
+    kit: updatedKit,
+  });
 }
 
 export async function deleteKit(request, response) {

@@ -6,12 +6,268 @@ import { practiceService } from "../../services/practice.service";
 import WeakSpotsReport from "../practice/WeakSpotsReport";
 
 export default function PracticeSession({ kitId }) {
-  const [cards, setCards] = useState([]); const [index, setIndex] = useState(0); const [revealed, setRevealed] = useState(false); const [confidence, setConfidence] = useState(3); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const [error, setError] = useState(""); const [weakSpots, setWeakSpots] = useState(null); const [weakSpotsLoading, setWeakSpotsLoading] = useState(true); const [weakSpotsError, setWeakSpotsError] = useState("");
-  useEffect(() => { practiceService.list(kitId).then((items) => { setCards(items); return practiceService.weakSpots(kitId); }).then(setWeakSpots).catch(() => { setError("Unable to load practice cards."); setWeakSpotsError("Unable to load weak spots."); }).finally(() => { setLoading(false); setWeakSpotsLoading(false); }); }, [kitId]);
-  if (loading) return <div className="surface animate-pulse p-8"><div className="h-5 w-32 rounded bg-[var(--surface-muted)]" /><div className="mt-7 h-64 rounded-2xl bg-[var(--surface-muted)]" /></div>;
-  if (error) return <p role="alert" className="rounded-xl bg-[#fbe9e7] p-4 text-[var(--danger)]">{error}</p>;
-  if (!cards.length) return <><div className="surface p-10 text-center sm:p-14"><p className="eyebrow">Practice queue</p><h2 className="mt-4 text-2xl font-bold">No flashcards yet</h2><p className="mx-auto mt-2 max-w-md text-[var(--muted)]">Complete kit generation before starting practice.</p><Link href={`/kits/${kitId}`} className="button button-secondary mt-6">Back to kit</Link></div><WeakSpotsReport data={weakSpots} loading={weakSpotsLoading} error={weakSpotsError} /></>;
+  const [cards, setCards] = useState([]);
+  const [index, setIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [confidence, setConfidence] = useState(3);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const [weakSpots, setWeakSpots] = useState(null);
+  const [weakSpotsLoading, setWeakSpotsLoading] = useState(true);
+  const [weakSpotsError, setWeakSpotsError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPractice() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const items = await practiceService.list(kitId);
+
+        if (!cancelled) {
+          setCards(items);
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setError("Unable to load practice cards.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    async function loadWeakSpots() {
+      setWeakSpotsLoading(true);
+      setWeakSpotsError("");
+
+      try {
+        const data = await practiceService.weakSpots(kitId);
+
+        if (!cancelled) {
+          setWeakSpots(data);
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setWeakSpotsError("Unable to load weak spots.");
+        }
+      } finally {
+        if (!cancelled) {
+          setWeakSpotsLoading(false);
+        }
+      }
+    }
+
+    loadPractice();
+    loadWeakSpots();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [kitId]);
+
+  if (loading) {
+    return (
+      <div className="surface animate-pulse p-8">
+        <div className="h-5 w-32 rounded bg-[var(--surface-muted)]" />
+        <div className="mt-7 h-64 rounded-2xl bg-[var(--surface-muted)]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <p
+        role="alert"
+        className="rounded-xl bg-[#fbe9e7] p-4 text-[var(--danger)]"
+      >
+        {error}
+      </p>
+    );
+  }
+
+  if (!cards.length) {
+    return (
+      <>
+        <div className="surface p-10 text-center sm:p-14">
+          <p className="eyebrow">Practice queue</p>
+
+          <h2 className="mt-4 text-2xl font-bold">
+            No flashcards yet
+          </h2>
+
+          <p className="mx-auto mt-2 max-w-md text-[var(--muted)]">
+            Complete kit generation before starting practice.
+          </p>
+
+          <Link
+            href={`/kits/${kitId}`}
+            className="button button-secondary mt-6"
+          >
+            Back to kit
+          </Link>
+        </div>
+
+        <WeakSpotsReport
+          data={weakSpots}
+          loading={weakSpotsLoading}
+          error={weakSpotsError}
+        />
+      </>
+    );
+  }
+
   const card = cards[index];
-  async function next() { setSaving(true); try { await practiceService.save(kitId, { flashcardId: card.id, confidence, covered: revealed }); setCards((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, practice: { confidence, covered: revealed } } : item)); setWeakSpots(await practiceService.weakSpots(kitId)); setIndex((value) => (value + 1) % cards.length); setRevealed(false); setConfidence(3); } catch (_error) { setError("Unable to save this review."); } finally { setSaving(false); } }
-  return <><section className="surface mx-auto max-w-3xl p-5 sm:p-8"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="eyebrow">Flashcard review</p><p className="mt-2 text-sm font-bold text-[var(--muted)]">Card {index + 1} of {cards.length} <span className="mx-1">·</span> {card.practice ? "Reviewed" : "Unanswered"}</p></div><div className="rounded-full bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-bold text-[var(--brand)]">{Math.round(((index + 1) / cards.length) * 100)}% through</div></div><div className="mt-5 h-1.5 rounded-full bg-[var(--surface-muted)]"><div className="h-full rounded-full bg-[var(--brand)] transition-all" style={{ width: `${((index + 1) / cards.length) * 100}%` }} /></div><article className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--canvas)] p-6 sm:p-9"><p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">Prompt</p><h2 className="mt-4 text-2xl font-bold leading-tight sm:text-3xl">{card.front}</h2>{revealed ? <div className="mt-9 border-t border-[var(--line)] pt-7"><p className="eyebrow">Answer outline</p><p className="mt-3 leading-7 text-[var(--muted)]">{card.back}</p></div> : <button onClick={() => setRevealed(true)} className="button button-secondary mt-9">Reveal answer</button>}</article><div className="mt-7 rounded-xl border border-[var(--line)] p-5"><div className="flex items-center justify-between"><label htmlFor="confidence" className="font-bold">How confident are you?</label><span className="rounded-full bg-[#fff1d9] px-3 py-1 text-sm font-black text-[#8a5a00]">{confidence} / 5</span></div><input id="confidence" type="range" min="1" max="5" value={confidence} onChange={(event) => setConfidence(Number(event.target.value))} className="mt-5 w-full accent-[var(--brand)]" /><div className="mt-2 flex justify-between text-xs font-semibold text-[var(--muted)]"><span>Needs work</span><span>Ready to discuss</span></div><div className="mt-6 flex justify-end"><button disabled={!revealed || saving} onClick={next} className="button button-primary min-w-28 disabled:opacity-50">{saving ? "Saving..." : "Next card →"}</button></div></div></section><WeakSpotsReport data={weakSpots} loading={weakSpotsLoading} error={weakSpotsError} /></>;
+
+  async function next() {
+    setSaving(true);
+    setError("");
+
+    try {
+      await practiceService.save(kitId, {
+        flashcardId: card.id,
+        confidence,
+        covered: revealed,
+      });
+
+      setCards((items) =>
+        items.map((item, itemIndex) =>
+          itemIndex === index
+            ? {
+                ...item,
+                practice: {
+                  confidence,
+                  covered: revealed,
+                },
+              }
+            : item,
+        ),
+      );
+
+      try {
+        const updatedWeakSpots = await practiceService.weakSpots(kitId);
+        setWeakSpots(updatedWeakSpots);
+        setWeakSpotsError("");
+      } catch (_error) {
+        setWeakSpotsError("Unable to refresh weak spots.");
+      }
+
+      setIndex((value) => (value + 1) % cards.length);
+      setRevealed(false);
+      setConfidence(3);
+    } catch (_error) {
+      setError("Unable to save this review.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <section className="surface mx-auto max-w-3xl p-5 sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="eyebrow">Flashcard review</p>
+
+            <p className="mt-2 text-sm font-bold text-[var(--muted)]">
+              Card {index + 1} of {cards.length}
+              <span className="mx-1">·</span>
+              {card.practice ? "Reviewed" : "Unanswered"}
+            </p>
+          </div>
+
+          <div className="rounded-full bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-bold text-[var(--brand)]">
+            {Math.round(((index + 1) / cards.length) * 100)}% through
+          </div>
+        </div>
+
+        <div className="mt-5 h-1.5 rounded-full bg-[var(--surface-muted)]">
+          <div
+            className="h-full rounded-full bg-[var(--brand)] transition-all"
+            style={{
+              width: `${((index + 1) / cards.length) * 100}%`,
+            }}
+          />
+        </div>
+
+        <article className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--canvas)] p-6 sm:p-9">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">
+            Prompt
+          </p>
+
+          <h2 className="mt-4 text-2xl font-bold leading-tight sm:text-3xl">
+            {card.front}
+          </h2>
+
+          {revealed ? (
+            <div className="mt-9 border-t border-[var(--line)] pt-7">
+              <p className="eyebrow">Answer outline</p>
+
+              <p className="mt-3 leading-7 text-[var(--muted)]">
+                {card.back}
+              </p>
+            </div>
+          ) : (
+            <button
+              onClick={() => setRevealed(true)}
+              className="button button-secondary mt-9"
+            >
+              Reveal answer
+            </button>
+          )}
+        </article>
+
+        <div className="mt-7 rounded-xl border border-[var(--line)] p-5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="confidence" className="font-bold">
+              How confident are you?
+            </label>
+
+            <span className="rounded-full bg-[#fff1d9] px-3 py-1 text-sm font-black text-[#8a5a00]">
+              {confidence} / 5
+            </span>
+          </div>
+
+          <input
+            id="confidence"
+            type="range"
+            min="1"
+            max="5"
+            value={confidence}
+            onChange={(event) =>
+              setConfidence(Number(event.target.value))
+            }
+            className="mt-5 w-full accent-[var(--brand)]"
+          />
+
+          <div className="mt-2 flex justify-between text-xs font-semibold text-[var(--muted)]">
+            <span>Needs work</span>
+            <span>Ready to discuss</span>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              disabled={!revealed || saving}
+              onClick={next}
+              className="button button-primary min-w-28 disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Next card →"}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <WeakSpotsReport
+        data={weakSpots}
+        loading={weakSpotsLoading}
+        error={weakSpotsError}
+      />
+    </>
+  );
 }
