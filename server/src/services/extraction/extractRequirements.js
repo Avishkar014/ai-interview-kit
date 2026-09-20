@@ -19,7 +19,7 @@ export default async function extractRequirements(jobDescription) {
   }
 
   const result = await requestJson(
-    "Extract only the requested job description fields. Return JSON with title, seniority, responsibilities, and requirements. Each requirement must have text, kind (technical, behavioural, or domain), and priority (must for required or must-have language, nice only for preferred, desired, or nice-to-have language). Do not generate interview questions or any other fields. Do not add IDs.",
+    "Extract only the requested job description fields. Return JSON with title, seniority, responsibilities, and requirements. title and seniority must always be non-empty strings; when the job description does not state seniority, use the literal string Unspecified, never null. Each requirement must have text, kind (technical, behavioural, or domain), and priority (must for required or must-have language, nice only for preferred, desired, or nice-to-have language). Do not generate interview questions or any other fields. Do not add IDs.",
     jobDescription,
   );
 

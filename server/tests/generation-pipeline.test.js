@@ -47,7 +47,9 @@ describe("generation pipeline", () => {
   });
 
   test("creates stable flashcard IDs", () => {
-    expect(generateFlashcards(requirements, [question("q1", "r1")]).map((card) => card.id)).toEqual(["f1", "f2", "f3"]);
+    const questions = requirements.map((requirement, index) => question(`q${index + 1}`, requirement.id));
+    expect(generateFlashcards(requirements, questions).map((card) => card.id)).toEqual(["f1", "f2", "f3"]);
+    expect(generateFlashcards(requirements, questions)[0].front).toBe("Question q1");
   });
 
   test("coverage ignores nice requirements", async () => {

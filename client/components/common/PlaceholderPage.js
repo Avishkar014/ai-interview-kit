@@ -1,11 +1,6 @@
+import Link from "next/link";
+import Footer from "./Footer";
+
 export default function PlaceholderPage({ title, description }) {
-  return (
-    <main className="min-h-screen bg-[#f4f7f5] px-6 py-16 text-[#17231f]">
-      <div className="mx-auto max-w-4xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#2f7562]">AI Interview Prep Kit</p>
-        <h1 className="mt-5 text-4xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-4 max-w-xl text-lg text-[#53635d]">{description}</p>
-      </div>
-    </main>
-  );
+  return <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]"><header className="border-b border-[var(--line)] bg-white"><div className="page-container flex items-center justify-between py-5"><Link href="/" className="brand-mark">AI<span>Prep</span></Link><Link href="/dashboard" className="button button-secondary">Dashboard</Link></div></header><main className="page-container flex min-h-[560px] items-center justify-center py-16"><div className="surface w-full max-w-2xl p-8 text-center sm:p-14"><p className="eyebrow">AI Interview Prep Kit</p><h1 className="mt-4 text-3xl font-bold">{title}</h1><p className="mx-auto mt-3 max-w-lg text-lg leading-7 text-[var(--muted)]">{description}</p><div className="mt-7 flex flex-wrap justify-center gap-3"><Link href="/dashboard" className="button button-primary">Open dashboard</Link><Link href="/kits/new" className="button button-secondary">Build a kit</Link></div></div></main><Footer /></div>;
 }
