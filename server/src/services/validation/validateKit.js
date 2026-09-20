@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import checkCoverage from "../coverage/checkCoverage.js";
+import validateGeneratedSemantics from "./semantic.js";
 import { validateKit as validateSchema } from "./kit.schema.js";
 
 export class KitValidationError extends Error {
@@ -45,6 +46,11 @@ function validateGeneratedKit(kit) {
   if (validated.questions.some((question) => question.requirement_ids.some((id) => !requirementIds.has(id)))) fail("Question has a dangling requirement reference");
   if (validated.flashcards.some((card) => card.requirement_ids.some((id) => !requirementIds.has(id)))) fail("Flashcard has a dangling requirement reference");
   if (validated.schedule.days.some((day) => day.question_ids.some((id) => !questionIds.has(id)))) fail("Schedule has a dangling question reference");
+  try {
+    validateGeneratedSemantics(requirements, validated.questions, validated.flashcards);
+  } catch (error) {
+    fail(error.message, [error]);
+  }
 
   return validated;
 }

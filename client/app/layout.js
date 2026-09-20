@@ -1,4 +1,5 @@
 import "./globals.css";
+import CookieConsent from "../components/common/CookieConsent";
 
 export const metadata = {
   title: "AI Interview Prep Kit",
@@ -6,5 +7,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body>{children}<CookieConsent /></body></html>;
 }

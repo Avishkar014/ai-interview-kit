@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { LLMError, requestJson } from "../llm.js";
+import validateGeneratedSemantics from "../validation/semantic.js";
 
 const categorySchema = z.enum(["technical", "behavioural", "system-design", "company-fit"]);
 const generatedQuestionSchema = z.strictObject({
@@ -43,7 +44,7 @@ async function generateCategory(category, input, { idStart = 1 } = {}) {
 
   const allowedIds = new Set(requirements.map((item) => item.id));
   const result = await requestJson(
-    `${promptFor(category)} Return only a JSON array or an object with a questions array. Every question must use only requirement IDs supplied by the user. Do not invent requirements or IDs. Each item must contain requirement_ids, category, prompt, answer_outline, and difficulty (integer 1-3).`,
+    `${promptFor(category)} Return only a JSON array or an object with a questions array. Every item must be an actual interview question or task in prompt, never copied requirement text. answer_outline must be guidance for answering that prompt, never copied requirement text. Every question must use only requirement IDs supplied by the user. Do not invent requirements or IDs. Each item must contain requirement_ids, category, prompt, answer_outline, and difficulty (integer 1-3).`,
     JSON.stringify({ category, requirements: categoryRequirements }),
   );
   const parsed = responseSchema.safeParse(result);
@@ -55,7 +56,13 @@ async function generateCategory(category, input, { idStart = 1 } = {}) {
   for (const question of validated) {
     if (question.requirement_ids.some((id) => !allowedIds.has(id))) throw new LLMError(`LLM returned an invalid requirement ID for ${category}`);
   }
-  return validated.map((question, index) => ({ id: `q${idStart + index}`, ...question }));
+  const identified = validated.map((question, index) => ({ id: `q${idStart + index}`, ...question }));
+  try {
+    validateGeneratedSemantics(requirements, identified, []);
+  } catch (error) {
+    throw new LLMError(error.message, error);
+  }
+  return identified;
 }
 
 export function generateTechnicalQuestions(requirements, options) {
