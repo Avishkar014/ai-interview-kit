@@ -1,0 +1,11 @@
+[
+  {
+    "jobTitle": "Senior Frontend Engineer",
+    "company": "Northstar Labs",
+    "company_url": "https://example.com",
+    "location": "Remote",
+    "jobDescription": "Build accessible, reliable product experiences with a cross-functional team.",
+    "days": 14,
+    "skills": ["JavaScript", "React", "Accessibility", "Testing", "System design"]
+  }
+]
