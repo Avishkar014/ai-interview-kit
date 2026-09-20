@@ -43,7 +43,7 @@ Add local values to `server/.env` before enabling database or authentication fea
 
 ## Environment Variables
 
-The server reads `PORT`, `MONGODB_URI`, `JWT_SECRET`, `OPENAI_API_KEY`, and `CLIENT_URL`. See `.env.example` for the complete template.
+The server reads `PORT`, `MONGODB_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `GEMINI_MODEL`, and `CLIENT_URL`. See `.env.example` for the complete template.
 
 ## Backend Commands
 

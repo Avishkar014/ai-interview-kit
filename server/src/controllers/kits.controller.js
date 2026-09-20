@@ -1,7 +1,10 @@
 import { z } from "zod";
+import mongoose from "mongoose";
 
 import Kit from "../models/kit.model.js";
+import Practice from "../models/practice.model.js";
 import generateKit from "../services/generation/generateKit.js";
+import aggregateWeakSpots from "../services/practice/weakSpots.js";
 
 const createKitSchema = z.object({
   company_url: z.string().url(),
@@ -13,7 +16,9 @@ const createKitSchema = z.object({
 });
 
 function safeError(error) {
-  return error?.code === "LLM_ERROR" ? error.message : "Kit generation failed";
+  if (error?.code === "KIT_GENERATION_ERROR" && error.message) return error.message;
+  if (error?.code === "LLM_ERROR" && error.message) return error.message;
+  return "Kit generation failed";
 }
 
 function ownerQuery(request, id) {
@@ -56,6 +61,14 @@ export async function getKit(request, response) {
   const kit = await Kit.findOne(ownerQuery(request, request.params.id)).select("-__v");
   if (!kit) return response.status(404).json({ success: false, message: "Kit not found" });
   return response.json({ success: true, kit });
+}
+
+export async function getWeakSpots(request, response) {
+  if (!mongoose.isValidObjectId(request.params.id)) return response.status(400).json({ success: false, message: "Invalid kit ID" });
+  const kit = await Kit.findOne(ownerQuery(request, request.params.id)).select("questions flashcards role");
+  if (!kit) return response.status(404).json({ success: false, message: "Kit not found" });
+  const practiceRecords = await Practice.find({ userId: request.user.id, kitId: request.params.id });
+  return response.json({ success: true, ...aggregateWeakSpots({ kit, practiceRecords }) });
 }
 
 export async function updateKit(request, response) {

@@ -12,7 +12,7 @@ const Kit = {
   updateOne: jest.fn(async () => ({ acknowledged: true })),
   find: jest.fn(() => ({ sort: () => ({ select: async () => [kit] }) })),
   findOne: jest.fn(() => findOneQuery(kit)),
-  findOneAndUpdate: jest.fn(async () => kit),
+  findOneAndUpdate: jest.fn(() => ({ select: async () => kit })),
   deleteOne: jest.fn(async () => ({ deletedCount: 1 })),
 };
 const Practice = {
@@ -61,6 +61,24 @@ describe("kit and practice API ownership", () => {
     expect(Practice.findOneAndUpdate).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1", kitId: "kit-1", flashcardId: "f1" }), expect.anything(), expect.objectContaining({ upsert: true }));
     Kit.findOne.mockImplementationOnce(() => findOneQuery(null));
     const otherUserResponse = await request(app).post("/api/practice/kit-1").set("Cookie", `token=${tokenFor("user-2")}`).send({ flashcardId: "f1", confidence: 4, covered: true });
+    expect(otherUserResponse.status).toBe(404);
+  });
+
+  test("owner checks protect modification and deletion", async () => {
+    Kit.findOneAndUpdate.mockImplementationOnce(() => ({ select: async () => null }));
+    const update = await request(app).patch("/api/kits/kit-1").set("Cookie", `token=${tokenFor("user-2")}`).send({ questions: [] });
+    expect(update.status).toBe(404);
+    Kit.deleteOne.mockResolvedValueOnce({ deletedCount: 0 });
+    const deletion = await request(app).delete("/api/kits/kit-1").set("Cookie", `token=${tokenFor("user-2")}`);
+    expect(deletion.status).toBe(404);
+  });
+
+  test("weak spots are owner-scoped", async () => {
+    const response = await request(app).get("/api/kits/507f1f77bcf86cd799439011/weak-spots").set("Cookie", `token=${tokenFor("user-1")}`);
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ success: true, weakSpots: [], focusTomorrow: [] });
+    Kit.findOne.mockImplementationOnce(() => findOneQuery(null));
+    const otherUserResponse = await request(app).get("/api/kits/507f1f77bcf86cd799439011/weak-spots").set("Cookie", `token=${tokenFor("user-2")}`);
     expect(otherUserResponse.status).toBe(404);
   });
 });

@@ -3,6 +3,7 @@ import net from "node:net";
 
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { retry } from "../../utils/retry.js";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -67,13 +68,13 @@ export default async function fetchPage(url) {
     const parsedUrl = await assertPublicHttpUrl(currentUrl);
     let response;
     try {
-      response = await axios.get(parsedUrl.href, {
+      response = await retry(() => axios.get(parsedUrl.href, {
         timeout: REQUEST_TIMEOUT_MS,
         maxRedirects: 0,
         responseType: "text",
         validateStatus: () => true,
         headers: { Accept: "text/html,application/xhtml+xml" },
-      });
+      }));
     } catch (error) {
       throw new Error(`Page request failed: ${error.message}`);
     }

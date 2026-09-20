@@ -85,7 +85,7 @@ export default async function generateKit(input, progressCallback) {
   } catch (error) {
     emit(progressCallback, "failed", 100);
     const safeError = error?.code === "LLM_ERROR" ? error.message : "Kit generation could not be completed";
-    const failure = new Error(safeError);
+    const failure = new Error(`${safeError} (stage: ${stage})`);
     failure.code = "KIT_GENERATION_ERROR";
     failure.stage = stage;
     throw failure;

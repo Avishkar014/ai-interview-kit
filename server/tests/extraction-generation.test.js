@@ -30,4 +30,10 @@ describe("extraction and company brief services", () => {
     requestJson.mockResolvedValue({ summary: "A company.", what_they_do: "Unknown.", sources: ["https://fake.example.com"] });
     await expect(generateCompanyBrief({}, { companyPages: [{ url: "https://example.com/about", title: "About", text: "Evidence" }] }, [])).rejects.toThrow("source URL");
   });
+
+  test("keeps provider failures safe and actionable", async () => {
+    const { LLMError } = await import("../src/services/llm.js");
+    requestJson.mockRejectedValue(new LLMError("Gemini provider authentication failed; check GEMINI_API_KEY"));
+    await expect(extractRequirements("Build software.")).rejects.toThrow("check GEMINI_API_KEY");
+  });
 });

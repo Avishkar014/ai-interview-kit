@@ -3,12 +3,13 @@ import axios from "axios";
 import fetchPage from "./fetchPage.js";
 import extractLinks from "./extractLinks.js";
 import rankLinks from "./rankLinks.js";
+import { retry } from "../../utils/retry.js";
 
 export default async function searchInterviewDiscussion(company, role) {
   if (!company || !role) return [];
   try {
     const query = encodeURIComponent(`${company} ${role} interview experience`);
-    const response = await axios.get(`https://www.google.com/search?q=${query}`, { timeout: 10_000, responseType: "text" });
+    const response = await retry(() => axios.get(`https://www.google.com/search?q=${query}`, { timeout: 10_000, responseType: "text" }));
     const candidates = rankLinks(extractLinks(response.data, "https://www.google.com")).slice(0, 5);
     const results = [];
     for (const candidate of candidates) {

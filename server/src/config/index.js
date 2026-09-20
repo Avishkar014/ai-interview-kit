@@ -5,7 +5,9 @@ export const config = {
 
   jwtSecret: process.env.JWT_SECRET,
 
-  openaiApiKey: process.env.OPENAI_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY,
+
+  geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash",
 
   clientUrl: process.env.CLIENT_URL || "http://localhost:3000",
 };
