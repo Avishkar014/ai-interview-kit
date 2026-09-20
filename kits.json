@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-09-20T04:57:34.658Z",
+  "kits": [
+    {
+      "id": "case-01",
+      "status": "failed",
+      "kit": null,
+      "error": {
+        "code": "KIT_GENERATION_ERROR",
+        "message": "OPENAI_API_KEY is not configured"
+      }
+    }
+  ]
+}
