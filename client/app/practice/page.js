@@ -1,0 +1,2 @@
+import PlaceholderPage from "../../components/common/PlaceholderPage";
+export default function PracticePage() { return <PlaceholderPage title="Practice" description="Practice sessions and feedback will live here." />; }

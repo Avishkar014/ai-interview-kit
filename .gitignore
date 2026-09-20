@@ -1,0 +1,29 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+
+# Build
+dist/
+
+# Test coverage
+coverage/
+
+# Generated output
+output/*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Keep application coverage service
+!server/src/services/coverage/
+!server/src/services/coverage/**

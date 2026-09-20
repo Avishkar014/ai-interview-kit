@@ -1,0 +1,2 @@
+import PlaceholderPage from "../../components/common/PlaceholderPage";
+export default function KitsPage() { return <PlaceholderPage title="Kits" description="Browse and manage interview preparation kits." />; }

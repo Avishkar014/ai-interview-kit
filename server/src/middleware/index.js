@@ -1,0 +1,1 @@
+// Shared authentication, error handling, and request validation middleware belongs here.

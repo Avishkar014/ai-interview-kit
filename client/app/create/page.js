@@ -1,0 +1,2 @@
+import PlaceholderPage from "../../components/common/PlaceholderPage";
+export default function CreatePage() { return <PlaceholderPage title="Create a kit" description="The kit builder will live here." />; }

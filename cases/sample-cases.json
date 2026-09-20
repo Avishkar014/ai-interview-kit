@@ -1,0 +1,11 @@
+{
+  "jobTitle": "Senior Frontend Engineer",
+  "company": "Northstar Labs",
+  "jobDescription": "Build accessible, reliable product experiences with a cross-functional team.",
+  "skills": ["JavaScript", "React", "Accessibility", "Testing", "System design"],
+  "questions": [
+    "Tell us about a frontend system you improved.",
+    "How do you make an interface accessible from the start?",
+    "Describe a difficult technical tradeoff and its outcome."
+  ]
+}
