@@ -125,8 +125,8 @@ The same generation pipeline used by the application is used for batch evaluatio
 
 ## AI
 
-* [LLM Provider]
-* [Model Name]
+* Gemini
+* Gemini 3.8 Flash
 
 ## Web Research
 
